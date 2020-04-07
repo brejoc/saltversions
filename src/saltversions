@@ -40,9 +40,9 @@ def fetch(repo):
     Fetching the spec file from a repository.
     """
     url = "https://api.opensuse.org/source/{}/salt/salt.spec".format(repo)
-    spec_file = requests.get(url, auth=(environ["OSCUSER"],
-                                        environ["OSCPASS"]))
+    spec_file = requests.get(url, auth=(environ["OSCUSER"], environ["OSCPASS"]))
     return repo, spec_file
+
 
 def main():
     with PoolExecutor(max_workers=4) as executor:
@@ -50,8 +50,7 @@ def main():
             if spec_file.status_code == 200:
                 spec = Spec.from_string(spec_file.text)
                 print("{}{}{}".format(bcolors.HEADER, repo, bcolors.ENDC))
-                print("{}{}{}\n".format(bcolors.OKBLUE, spec.version,
-                                        bcolors.ENDC))
+                print("{}{}{}\n".format(bcolors.OKBLUE, spec.version, bcolors.ENDC))
             else:
                 print("{}{}{}".format(bcolors.HEADER, repo, bcolors.ENDC))
                 print(
