@@ -9,6 +9,7 @@ __email__ = "jbreuer@suse.de"
 __license__ = "MIT"
 
 from os import environ
+from concurrent.futures import ThreadPoolExecutor as PoolExecutor
 
 import requests
 from pyrpm.spec import Spec
@@ -34,23 +35,30 @@ class bcolors:
     UNDERLINE = "\033[4m"
 
 
+def fetch(repo):
+    """
+    Fetching the spec file from a repository.
+    """
+    url = "https://api.opensuse.org/source/{}/salt/salt.spec".format(repo)
+    spec_file = requests.get(url, auth=(environ["OSCUSER"],
+                                        environ["OSCPASS"]))
+    return repo, spec_file
+
 def main():
-    for repo in repos:
-        url = "https://api.opensuse.org/source/{}/salt/salt.spec".format(repo)
-        spec_file = requests.get(url, auth=(environ["OSCUSER"],
-                                            environ["OSCPASS"]))
-        if spec_file.status_code == 200:
-            spec = Spec.from_string(spec_file.text)
-            print("{}{}{}".format(bcolors.HEADER, repo, bcolors.ENDC))
-            print("{}{}{}\n".format(bcolors.OKBLUE, spec.version,
-                                    bcolors.ENDC))
-        else:
-            print("{}{}{}".format(bcolors.HEADER, repo, bcolors.ENDC))
-            print(
-                "{}{}{}\n".format(
-                    bcolors.FAIL, "Error while fetching repo.\n", bcolors.ENDC
+    with PoolExecutor(max_workers=4) as executor:
+        for repo, spec_file in executor.map(fetch, repos):
+            if spec_file.status_code == 200:
+                spec = Spec.from_string(spec_file.text)
+                print("{}{}{}".format(bcolors.HEADER, repo, bcolors.ENDC))
+                print("{}{}{}\n".format(bcolors.OKBLUE, spec.version,
+                                        bcolors.ENDC))
+            else:
+                print("{}{}{}".format(bcolors.HEADER, repo, bcolors.ENDC))
+                print(
+                    "{}{}{}\n".format(
+                        bcolors.FAIL, "Error while fetching repo.\n", bcolors.ENDC
+                    )
                 )
-            )
 
 
 if __name__ == "__main__":
