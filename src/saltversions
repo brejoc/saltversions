@@ -8,6 +8,7 @@ __author__ = "Jochen Breuer"
 __email__ = "jbreuer@suse.de"
 __license__ = "MIT"
 
+import sys
 from os import environ
 from concurrent.futures import ThreadPoolExecutor as PoolExecutor
 
@@ -20,6 +21,8 @@ repos = (
     "systemsmanagement:saltstack:products:testing",
     "systemsmanagement:saltstack:products:next",
     "systemsmanagement:saltstack:products:next:testing",
+    "systemsmanagement:saltstack",
+    "systemsmanagement:saltstack:testing",
     "openSUSE:Factory",
 )
 
@@ -45,6 +48,12 @@ def fetch(repo):
 
 
 def main():
+    if not all((environ.get("OSCUSER", None), environ.get("OSCPASS", None))):
+        print(
+            "Please provide username and password as environment varibales OSCUSER and OSCPASS.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
     with PoolExecutor(max_workers=4) as executor:
         for repo, spec_file in executor.map(fetch, repos):
             if spec_file.status_code == 200:
