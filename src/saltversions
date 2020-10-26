@@ -45,33 +45,36 @@ class bcolors:
     UNDERLINE = "\033[4m"
 
 
-def fetch(repo, credentials):
+def fetch(repo, credentials, api_url):
     """
     Fetching the spec file from a repository.
     """
-    url = "https://api.opensuse.org/source/{}/salt/salt.spec".format(repo)
+    spec_url = "{}/source/{}/salt/salt.spec".format(api_url, repo)
     spec_file = requests.get(
-        url, auth=(credentials["username"], credentials["password"])
+        spec_url, auth=(credentials["username"], credentials["password"])
     )
     return repo, spec_file
 
 
 def main():
+    """
+    Entry point of the script.
+    """
     if (
         not all((environ.get("OSCUSER", None), environ.get("OSCPASS", None)))
         and not HAS_OSC
     ):
         print(
-            "Please provide username and password as environment varibales OSCUSER and OSCPASS.",
+            "Please provide username and password as environment variables OSCUSER and OSCPASS.",
             file=sys.stderr,
         )
         sys.exit(1)
 
-
     credentials = {}
+    api_url = "https://api.opensuse.org"
     if HAS_OSC:
         osc.conf.get_config()
-        apiconf = osc.conf.config["api_host_options"]["https://api.opensuse.org"]
+        apiconf = osc.conf.config["api_host_options"][api_url]
         credentials["username"] = apiconf["user"]
         credentials["password"] = apiconf["pass"]
     else:
@@ -79,8 +82,8 @@ def main():
         credentials["password"] = environ["OSCPASS"]
 
     with PoolExecutor(max_workers=4) as executor:
-        fetch_with_creds = partial(fetch, credentials=credentials)
-        for repo, spec_file in executor.map(fetch_with_creds, repos):
+        fetch_with_creds_host = partial(fetch, credentials=credentials, api_url=api_url)
+        for repo, spec_file in executor.map(fetch_with_creds_host, repos):
             if spec_file.status_code == 200:
                 spec = Spec.from_string(spec_file.text)
                 print("{}{}{}".format(bcolors.HEADER, repo, bcolors.ENDC))
