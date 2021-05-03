@@ -26,6 +26,8 @@ except ImportError:
 repos = (
     "systemsmanagement:saltstack:products",
     "systemsmanagement:saltstack:products:testing",
+    "systemsmanagement:saltstack:products:3000",
+    "systemsmanagement:saltstack:products:3000:testing",
     "systemsmanagement:saltstack:products:next",
     "systemsmanagement:saltstack:products:next:testing",
     "systemsmanagement:saltstack",
